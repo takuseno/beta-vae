@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def _make_encoder(convs, fc, inputs, keep_prob, reuse=False):
+def _make_encoder(convs, fcs, inputs, keep_prob, reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
         out = inputs
         for _, ch, kernel, stride in convs:
@@ -11,14 +11,17 @@ def _make_encoder(convs, fc, inputs, keep_prob, reuse=False):
             out = tf.nn.dropout(out, keep_prob)
         feature = out
         feature_size = out.shape[1] * out.shape[2] * out.shape[3]
-        flat = tf.reshape(out, [-1, feature_size])
-        out = tf.layers.dense(flat, fc)
+        out = tf.reshape(out, [-1, feature_size])
+        for i, fc in enumerate(fcs):
+            out = tf.layers.dense(out, fc, activation=tf.nn.relu)
+            out = tf.nn.dropout(out, keep_prob)
     return out, feature.shape[1:]
 
-def _make_decoder(convs, fc, latent, feature_shape, keep_prob, reuse=False):
+def _make_decoder(convs, fcs, latent, feature_shape, keep_prob, reuse=False):
     with tf.variable_scope('decoder', reuse=reuse):
-        out = tf.layers.dense(latent, fc, activation=tf.nn.relu)
-        out = tf.nn.dropout(out, keep_prob)
+        for fc in reversed(fcs):
+            out = tf.layers.dense(latent, fc, activation=tf.nn.relu)
+            out = tf.nn.dropout(out, keep_prob)
 
         feature_size = feature_shape[0] * feature_shape[1] * feature_shape[2]
         out = tf.layers.dense(latent, feature_size, activation=tf.nn.relu)
@@ -43,11 +46,11 @@ def _make_latent(latent_size, inputs, reuse=False):
         latent = mu + eps * tf.sqrt(tf.exp(log_std))
     return latent, mu, log_std
 
-def make_encoder(convs, fc):
-    return lambda *args, **kwargs: _make_encoder(convs, fc, *args, **kwargs)
+def make_encoder(convs, fcs):
+    return lambda *args, **kwargs: _make_encoder(convs, fcs, *args, **kwargs)
 
-def make_decoder(convs, fc):
-    return lambda *args, **kwargs: _make_decoder(convs, fc, *args, **kwargs)
+def make_decoder(convs, fcs):
+    return lambda *args, **kwargs: _make_decoder(convs, fcs, *args, **kwargs)
 
 def make_latent(latent_size):
     return lambda *args, **kwargs: _make_latent(latent_size, *args, **kwargs)

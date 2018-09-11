@@ -27,8 +27,8 @@ def main():
     mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
     # make networks
-    encoder = make_encoder(constants.CONVS, constants.FC)
-    decoder = make_decoder(constants.CONVS, constants.FC)
+    encoder = make_encoder(constants.CONVS, constants.FCS)
+    decoder = make_decoder(constants.CONVS, constants.FCS)
     sample_latent = make_latent(constants.LATENT_SIZE)
 
     # build graphs
@@ -52,11 +52,13 @@ def main():
     image_size = constants.IMAGE_SIZE
 
     # start training
-    for i in range(10000):
+    for i in range(30000):
         batch_images, _ = mnist.train.next_batch(batch_size)
         batch_images = np.reshape(batch_images, [batch_size] + image_size) 
         loss = train(batch_images, beta=constants.BETA)
-        print(loss)
+        print('loss {}:'.format(i), loss)
+
+        # visualize
         if i % 100 == 0:
             # reconstruction
             reconst, latent = reconstruct(batch_images)
