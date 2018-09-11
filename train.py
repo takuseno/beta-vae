@@ -1,9 +1,10 @@
 import numpy as np
 import tensorflow as tf
 import cv2
+import constants
 
 from build_graph import build_graph
-from network import make_network
+from network import make_encoder, make_decoder, make_latent
 from tensorflow.examples.tutorials.mnist import input_data
 
 
@@ -25,19 +26,36 @@ def main():
     # get MNIST data
     mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
+    # make networks
+    encoder = make_encoder(constants.CONVS, constants.FC)
+    decoder = make_decoder(constants.CONVS, constants.FC)
+    sample_latent = make_latent(constants.LATENT_SIZE)
+
     # build graphs
     reconstruct,\
     reconstruct_from_latent,\
-    train = build_graph(make_network(), latent_size=8)
+    train = build_graph(
+        encoder=encoder,
+        decoder=decoder,
+        sample_latent=sample_latent,
+        image_size=constants.IMAGE_SIZE,
+        latent_size=constants.LATENT_SIZE,
+        lr=constants.LR
+    )
 
     sess = tf.Session()
     sess.__enter__()
     sess.run(tf.global_variables_initializer())
 
+    # constant variables
+    batch_size = constants.BATCH_SIZE
+    image_size = constants.IMAGE_SIZE
+
+    # start training
     for i in range(10000):
-        batch_images, _ = mnist.train.next_batch(32)
-        batch_images = np.reshape(batch_images, [32, 28, 28, 1]) 
-        loss = train(batch_images)
+        batch_images, _ = mnist.train.next_batch(batch_size)
+        batch_images = np.reshape(batch_images, [batch_size] + image_size) 
+        loss = train(batch_images, beta=constants.BETA)
         print(loss)
         if i % 100 == 0:
             # reconstruction

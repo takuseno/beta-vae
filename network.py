@@ -2,47 +2,52 @@ import numpy as np
 import tensorflow as tf
 
 
-def encoder(inputs, reuse=False):
-    w_init = tf.orthogonal_initializer(np.sqrt(2.0))
+def _make_encoder(convs, fc, inputs, keep_prob, reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
-        out = tf.layers.conv2d(inputs, 32, kernel_size=(4, 4), strides=2,
-                               activation=tf.nn.relu, padding='valid',
-                               kernel_initializer=w_init)
-        out = tf.reshape(out, [-1, 13*13*32])
-        feature = tf.layers.dense(
-            out, 256, activation=tf.nn.relu, kernel_initializer=w_init)
-    return feature
+        out = inputs
+        for _, ch, kernel, stride in convs:
+            out = tf.layers.conv2d(out, ch, kernel_size=kernel, strides=stride,
+                                   activation=tf.nn.relu, padding='same')
+            out = tf.nn.dropout(out, keep_prob)
+        feature = out
+        feature_size = out.shape[1] * out.shape[2] * out.shape[3]
+        flat = tf.reshape(out, [-1, feature_size])
+        out = tf.layers.dense(flat, fc)
+    return out, feature.shape[1:]
 
-def decoder(latent, reuse=False):
-    w_init = tf.orthogonal_initializer(np.sqrt(2.0))
+def _make_decoder(convs, fc, latent, feature_shape, keep_prob, reuse=False):
     with tf.variable_scope('decoder', reuse=reuse):
-        out = tf.layers.dense(
-            latent, 256, kernel_initializer=w_init, activation=tf.nn.relu)
-        out = tf.layers.dense(
-            latent, 13*13*32, kernel_initializer=w_init, activation=tf.nn.relu)
-        out = tf.reshape(out, [-1, 13, 13, 32])
-        out = tf.layers.conv2d_transpose(
-            out, 1, kernel_size=(4, 4), strides=2, padding='valid',
-            kernel_initializer=w_init)
+        out = tf.layers.dense(latent, fc, activation=tf.nn.relu)
+        out = tf.nn.dropout(out, keep_prob)
+
+        feature_size = feature_shape[0] * feature_shape[1] * feature_shape[2]
+        out = tf.layers.dense(latent, feature_size, activation=tf.nn.relu)
+        out = tf.nn.dropout(out, keep_prob)
+        out = tf.reshape(out, [-1] + list(feature_shape))
+
+        for i, (ch, _, kernel, stride) in enumerate(reversed(convs)):
+            out = tf.layers.conv2d_transpose(
+                out, ch, kernel_size=kernel, strides=stride, padding='same')
+            if i != len(convs) - 1:
+                out = tf.nn.relu(out)
+                out = tf.nn.dropout(out, keep_prob)
     return out
 
-def _make_network(inputs, latent_size):
-    w_init = tf.orthogonal_initializer(np.sqrt(2.0))
+def _make_latent(latent_size, inputs, reuse=False):
+    with tf.variable_scope('latent', reuse=reuse):
+        # latent
+        mu = tf.layers.dense(inputs, latent_size)
+        log_std = tf.layers.dense(inputs, latent_size)
+        # reparametization trick
+        eps = tf.random_normal(tf.shape(log_std))
+        latent = mu + eps * tf.sqrt(tf.exp(log_std))
+    return latent, mu, log_std
 
-    # encoding
-    feature = encoder(inputs)
+def make_encoder(convs, fc):
+    return lambda *args, **kwargs: _make_encoder(convs, fc, *args, **kwargs)
 
-    # latent
-    mu = tf.layers.dense(feature, latent_size, kernel_initializer=w_init)
-    log_std = tf.layers.dense(feature, latent_size, kernel_initializer=w_init)
-    # reparametization trick
-    eps = tf.random_normal(tf.shape(log_std))
-    latent = mu + eps * tf.sqrt(tf.exp(log_std))
+def make_decoder(convs, fc):
+    return lambda *args, **kwargs: _make_decoder(convs, fc, *args, **kwargs)
 
-    # decoding
-    reconst = decoder(latent)
-
-    return feature, latent, reconst, mu, log_std
-
-def make_network():
-    return lambda inputs, latent_size: _make_network(inputs, latent_size)
+def make_latent(latent_size):
+    return lambda *args, **kwargs: _make_latent(latent_size, *args, **kwargs)
