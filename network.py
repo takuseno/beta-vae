@@ -19,12 +19,13 @@ def _make_encoder(convs, fcs, inputs, keep_prob, reuse=False):
 
 def _make_decoder(convs, fcs, latent, feature_shape, keep_prob, reuse=False):
     with tf.variable_scope('decoder', reuse=reuse):
+        out = latent
         for fc in reversed(fcs):
-            out = tf.layers.dense(latent, fc, activation=tf.nn.relu)
+            out = tf.layers.dense(out, fc, activation=tf.nn.relu)
             out = tf.nn.dropout(out, keep_prob)
 
         feature_size = feature_shape[0] * feature_shape[1] * feature_shape[2]
-        out = tf.layers.dense(latent, feature_size, activation=tf.nn.relu)
+        out = tf.layers.dense(out, feature_size, activation=tf.nn.relu)
         out = tf.nn.dropout(out, keep_prob)
         out = tf.reshape(out, [-1] + list(feature_shape))
 
