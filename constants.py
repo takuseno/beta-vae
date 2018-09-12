@@ -6,3 +6,4 @@ LR = 5e-4
 BATCH_SIZE = 64
 IMAGE_SIZE = [28, 28, 1]
 BETA = 1.0
+ACTIVATION = 'leaky_relu'

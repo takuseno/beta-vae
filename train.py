@@ -26,9 +26,18 @@ def main():
     # get MNIST data
     mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
+    if constants.ACTIVATION == 'leaky_relu':
+        activation = tf.nn.leaky_relu
+    elif constants.ACTIVATION == 'relu':
+        activation = tf.nn.relu
+    elif constants.ACTIVATION == 'tanh':
+        activation = tf.nn.tanh
+    else:
+        activation = tf.nn.relu
+
     # make networks
-    encoder = make_encoder(constants.CONVS, constants.FCS)
-    decoder = make_decoder(constants.CONVS, constants.FCS)
+    encoder = make_encoder(constants.CONVS, constants.FCS, activation)
+    decoder = make_decoder(constants.CONVS, constants.FCS, activation)
     sample_latent = make_latent(constants.LATENT_SIZE)
 
     # build graphs
