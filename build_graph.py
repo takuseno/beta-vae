@@ -34,10 +34,10 @@ def build_graph(encoder,
         flatten_reconst = tf.reshape(reconst_logits, [batch_size, -1])
         entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=flatten_input,
                                                           logits=flatten_reconst)
-        reconst_loss = tf.reduce_mean(tf.reduce_mean(entropy, axis=1))
+        reconst_loss = tf.reduce_mean(tf.reduce_sum(entropy, axis=1))
         # kl divergence
         kl = 0.5 * (-log_std + tf.square(mu) + tf.exp(log_std) - 1)
-        kl_penalty = tf.reduce_mean(tf.reduce_mean(kl, axis=1))
+        kl_penalty = tf.reduce_mean(tf.reduce_sum(kl, axis=1))
         # loss
         loss = reconst_loss + beta_ph * kl_penalty
 
