@@ -29,8 +29,11 @@ def build_graph(encoder,
         var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
 
         # reconstruction loss
-        entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=input_ph,
-                                                          logits=reconst_logits)
+        batch_size = tf.shape(input_ph)[0]
+        flatten_input = tf.reshape(input_ph, [batch_size, -1])
+        flatten_reconst = tf.reshape(reconst_logits, [batch_size, -1])
+        entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=flatten_input,
+                                                          logits=flatten_reconst)
         reconst_loss = tf.reduce_mean(tf.reduce_mean(entropy, axis=1))
         # kl divergence
         kl = 0.5 * (-log_std + tf.square(mu) + tf.exp(log_std) - 1)
