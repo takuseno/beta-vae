@@ -23,7 +23,8 @@ def build_graph(encoder,
         reconst = tf.nn.sigmoid(reconst_logits)
 
         # from latent to reconstruction
-        from_latent = decoder(latent_ph, feature_shape, keep_prob_ph, reuse=True)
+        generate_logits = decoder(latent_ph, feature_shape, keep_prob_ph, reuse=True)
+        generate = tf.nn.sigmoid(generate_logits)
 
         # parameters
         var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope)
@@ -52,13 +53,13 @@ def build_graph(encoder,
         sess = tf.get_default_session()
         return sess.run([reconst, latent], feed_dict)
 
-    def reconstruct_from_latent(latent):
+    def generate(latent):
         feed_dict = {
             latent_ph: latent,
             keep_prob_ph: 1.0
         }
         sess = tf.get_default_session()
-        return sess.run(from_latent, feed_dict=feed_dict)
+        return sess.run(generate, feed_dict=feed_dict)
 
     def train(inputs, keep_prob=0.5, beta=1.0):
         feed_dict = {
@@ -69,4 +70,4 @@ def build_graph(encoder,
         sess = tf.get_default_session()
         return sess.run([loss, opt_expr], feed_dict=feed_dict)[0]
 
-    return reconstruct, reconstruct_from_latent, train
+    return reconstruct, generate, train
