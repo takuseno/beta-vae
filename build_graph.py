@@ -13,10 +13,11 @@ def build_graph(encoder,
         beta_ph = tf.placeholder(tf.float32, [], name='beta')
         latent_ph = tf.placeholder(tf.float32, [None, latent_size], name='latent')
         keep_prob_ph = tf.placeholder(tf.float32, [], name='keep_prob')
+        deterministic_ph = tf.placeholder(tf.float32, [], name='deterministic')
 
         # network processes inputs
         encoded, feature_shape = encoder(input_ph, keep_prob_ph)
-        latent, mu, log_std = sample_latent(encoded)
+        latent, mu, log_std = sample_latent(encoded, deterministic_ph)
         reconst_logits = decoder(latent, feature_shape, keep_prob_ph)
 
         # reconstruction image
@@ -48,7 +49,8 @@ def build_graph(encoder,
     def reconstruct(inputs):
         feed_dict = {
             input_ph: inputs,
-            keep_prob_ph: 1.0
+            keep_prob_ph: 1.0,
+            deterministic_ph: 1.0
         }
         sess = tf.get_default_session()
         return sess.run([reconst, latent], feed_dict)
@@ -56,7 +58,8 @@ def build_graph(encoder,
     def generate(latent):
         feed_dict = {
             latent_ph: latent,
-            keep_prob_ph: 1.0
+            keep_prob_ph: 1.0,
+            deterministic_ph: 1.0
         }
         sess = tf.get_default_session()
         return sess.run(generate, feed_dict=feed_dict)
@@ -65,7 +68,8 @@ def build_graph(encoder,
         feed_dict = {
             input_ph: inputs,
             beta_ph: beta,
-            keep_prob_ph: keep_prob
+            keep_prob_ph: keep_prob,
+            deterministic_ph: 0.0
         }
         sess = tf.get_default_session()
         return sess.run([loss, opt_expr], feed_dict=feed_dict)[0]

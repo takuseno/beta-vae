@@ -54,14 +54,14 @@ def _make_decoder(convs, fcs, activation, latent,
                 out = tf.nn.dropout(out, keep_prob)
     return out
 
-def _make_latent(latent_size, inputs, reuse=False):
+def _make_latent(latent_size, inputs, deterministic, reuse=False):
     with tf.variable_scope('latent', reuse=reuse):
         # mean and standard deviation
         mu = tf.layers.dense(inputs, latent_size, kernel_initializer=w_init())
         log_std = tf.layers.dense(inputs, latent_size, kernel_initializer=w_init())
         # reparametization trick
         eps = tf.random_normal(tf.shape(log_std), 0.0, 1.0, dtype=tf.float32)
-        latent = mu + eps * tf.sqrt(tf.exp(log_std))
+        latent = mu + eps * tf.sqrt(tf.exp(log_std)) * (1.0 - deterministic)
     return latent, mu, log_std
 
 def make_encoder(convs, fcs, activation):
