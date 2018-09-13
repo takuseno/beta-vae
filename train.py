@@ -2,7 +2,10 @@ import numpy as np
 import tensorflow as tf
 import cv2
 import constants
+import argparse
+import os
 
+from datetime import datetime
 from build_graph import build_graph
 from network import make_encoder, make_decoder, make_latent
 from tensorflow.examples.tutorials.mnist import input_data
@@ -23,6 +26,11 @@ def tile_images(images, row=2):
     return output
 
 def main():
+    date = datetime.now().strftime('%Y%m%d%H%M%S')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--modeldir', type=str, default=date)
+    args = parser.parse_args()
+
     # get MNIST data
     mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 
@@ -84,6 +92,14 @@ def main():
 
             if cv2.waitKey(10) > 0:
                 pass
+
+    # save model
+    print('saving model...')
+    modeldir = 'saved_models/' + args.modeldir
+    if not os.path.exists(modeldir):
+        os.makedirs(modeldir)
+    saver = tf.train.Saver()
+    saver.save(sess, modeldir + '/model.ckpt')
 
 if __name__ == '__main__':
     main()
