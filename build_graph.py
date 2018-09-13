@@ -53,7 +53,7 @@ def build_graph(encoder,
             deterministic_ph: 1.0
         }
         sess = tf.get_default_session()
-        return sess.run([reconst, latent], feed_dict)
+        return sess.run([reconst, mu], feed_dict)
 
     def generate(latent):
         feed_dict = {
