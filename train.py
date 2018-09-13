@@ -5,35 +5,14 @@ import constants
 import argparse
 import os
 
+from util import tile_images, dump_constants
 from datetime import datetime
 from build_graph import build_graph
 from network import make_encoder, make_decoder, make_latent
 from tensorflow.examples.tutorials.mnist import input_data
 
 
-def tile_images(images, row=2):
-    shape = images.shape[1:]
-    column = int(images.shape[0] / row)
-    height = shape[0]
-    width = shape[1]
-    tile_height = row * height
-    tile_width = column * width
-    output = np.zeros((tile_height, tile_width, shape[-1]), dtype=np.uint8)
-    for i in range(row):
-        for j in range(column):
-            image = images[i*column+j]
-            output[i*height:(i+1)*height,j*width:(j+1)*width] = image
-    return output
-
-def main():
-    date = datetime.now().strftime('%Y%m%d%H%M%S')
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--modeldir', type=str, default=date)
-    args = parser.parse_args()
-
-    # get MNIST data
-    mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-
+def build(constants):
     if constants.ACTIVATION == 'leaky_relu':
         activation = tf.nn.leaky_relu
     elif constants.ACTIVATION == 'relu':
@@ -50,7 +29,7 @@ def main():
 
     # build graphs
     reconstruct,\
-    reconstruct_from_latent,\
+    generate,\
     train = build_graph(
         encoder=encoder,
         decoder=decoder,
@@ -59,6 +38,19 @@ def main():
         latent_size=constants.LATENT_SIZE,
         lr=constants.LR
     )
+    return reconstruct, generate, train
+
+def main():
+    date = datetime.now().strftime('%Y%m%d%H%M%S')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--modeldir', type=str, default=date)
+    args = parser.parse_args()
+
+    # get MNIST data
+    mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+
+    # make network
+    reconstruct, generate, train = build(constants)
 
     sess = tf.Session()
     sess.__enter__()
@@ -100,6 +92,8 @@ def main():
         os.makedirs(modeldir)
     saver = tf.train.Saver()
     saver.save(sess, modeldir + '/model.ckpt')
+    # save configuration as json
+    dump_constants(constants, modeldir + '/constants.json')
 
 if __name__ == '__main__':
     main()
