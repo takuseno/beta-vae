@@ -55,7 +55,7 @@ def build_graph(encoder,
         sess = tf.get_default_session()
         return sess.run([reconst, mu], feed_dict)
 
-    def generate(latent):
+    def generate_from_latent(latent):
         feed_dict = {
             latent_ph: latent,
             keep_prob_ph: 1.0,
@@ -74,4 +74,4 @@ def build_graph(encoder,
         sess = tf.get_default_session()
         return sess.run([loss, opt_expr], feed_dict=feed_dict)[0]
 
-    return reconstruct, generate, train
+    return reconstruct, generate_from_latent, train
