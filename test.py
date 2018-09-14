@@ -48,7 +48,7 @@ def main():
     cv2.imshow('original', original_tiled_images)
 
     while cv2.waitKey(10) < 10:
-        time.sleep(10)
+        time.sleep(0.1)
 
 if __name__ == '__main__':
     main()
