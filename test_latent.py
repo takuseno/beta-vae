@@ -36,18 +36,22 @@ def main():
 
     # reconstruction
     reconst, latent = reconstruct(batch_images)
-    noise = np.linspace(-3.0, 3.0, num=20)
+    latent_range = np.linspace(-3.0, 3.0, num=20)
 
+    image_rows = []
     for i in range(constants.LATENT_SIZE):
         tiled_latent = np.tile(latent[0].copy(), (20, 1))
-        tiled_latent[:,i] = noise
+        tiled_latent[:,i] = latent_range
 
         reconst = generate_from_latent(tiled_latent)
 
         # show reconstructed images
         reconst_images = np.array(reconst * 255, dtype=np.uint8)
-        reconst_tiled_images = tile_images(reconst_images)
-        cv2.imshow('test{}'.format(i), reconst_tiled_images)
+        reconst_tiled_images = tile_images(reconst_images, row=1)
+        image_rows.append(reconst_tiled_images)
+
+    image_rows = tile_images(np.array(image_rows), row=constants.LATENT_SIZE)
+    cv2.imshow('test'.format(i), image_rows)
 
     while cv2.waitKey(10) < 10:
         time.sleep(0.1)
