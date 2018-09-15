@@ -12,3 +12,13 @@ https://arxiv.org/pdf/1606.05579.pdf
 ```
 $ python train.py
 ```
+
+## test trained models
+```
+$ python test.py --model saved_models/path/models.ckpt --config saved_models/path/constants.json
+```
+
+## test each element of the latent variable
+```
+$ python test_latent.py --model saved_models/path/models.ckpt --config saved_models/path/constants.json
+```
