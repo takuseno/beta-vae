@@ -1,0 +1,37 @@
+FROM tensorflow/tensorflow:latest-gpu-py3
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential software-properties-common cmake curl python3-dev x11-apps \
+    libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa-dev xvfb x11-utils libasio-dev git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y libsm6 libxext6 libxrender1 git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN if [ ! -e /usr/bin/python ]; then ln -sf /usr/bin/python3 /usr/bin/python; fi && \
+    curl -O https://bootstrap.pypa.io/get-pip.py && \
+    python get-pip.py && \
+    rm get-pip.py
+
+COPY requirements.txt /tmp
+
+RUN pip install --upgrade pip setuptools && \
+    pip --no-cache-dir install -r /tmp/requirements.txt
+
+ARG uid=1000
+ARG gid=1000
+RUN groupadd -g ${gid} app && \
+    useradd -u ${uid} -g ${gid} -r app && \
+    mkdir /home/app && \
+    chown ${uid}:${gid} -R /home/app
+
+WORKDIR /home/app
+
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+
+EXPOSE 6006
+
+ENTRYPOINT ["/home/app/entrypoint.sh"]
