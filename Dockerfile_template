@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu-py3
+FROM {image}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential software-properties-common cmake curl python3-dev x11-apps \
@@ -22,7 +22,7 @@ RUN pip install --upgrade pip setuptools && \
 
 ARG uid=1000
 ARG gid=1000
-RUN groupadd -g ${gid} app && \
+RUN groupadd -g ${gid} app || \
     useradd -u ${uid} -g ${gid} -r app && \
     mkdir /home/app && \
     chown ${uid}:${gid} -R /home/app
